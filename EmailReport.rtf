@@ -1,0 +1,69 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf600
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 function emailCharts(sheet,emails,emailSubject)\{\
+  var sheet_id = ''; 		// Spreadsheet ID\
+  var sheet = SpreadsheetApp.openById(sheet_id).getActiveSheet();		// get Active sheet\
+  //var currentDate =  Utilities.formatDate(new Date(), "GMT+1", "dd.MM.yyyy");\
+  var currentDate = new Date();\
+  var dateBefore7Days =  new Date();\
+  dateBefore7Days.setDate(currentDate.getDate()-7);\
+  currentDate =  Utilities.formatDate(currentDate, "GMT+1", "dd.MM.yyyy");\
+  dateBefore7Days =  Utilities.formatDate(dateBefore7Days, "GMT+1", "dd.MM.yyyy");\
+  var emailSubject = "Ventilation report of Room " + sheet.getRange('L3').getValue() + " (Week from " + dateBefore7Days + " to " + currentDate + ")";\
+  var emails = sheet.getRange('K3').getValue(); // your email ID\
+  var charts = sheet.getCharts();\
+  var className = sheet.getRange("M3").getValue();\
+  var misconductMinutes = (sheet.getRange("C3").getValue() / 60).toFixed(0);\
+  \
+  \
+  if(charts.length==0)\{\
+    MailApp.sendEmail(\{\
+      to: emails,\
+      subject: "ERROR:"+emailSubject,\
+      htmlBody: "No charts in the spreadsheet"\});    \
+    return;\
+  \}\
+  \
+  var chartBlobs=new Array(charts.length); \
+  var emailBody1="Dear class " + className + ",<br><br>Please find your weekly report of your ventilation and heating behavior below.<br>";\
+  var emailBody2="<br>In the last week you left the window open for " + misconductMinutes + " minutes while the heater was running.<br>";\
+  var emailBody3="<br><b><font color=\\"green\\">Please consider to close all windows of the room before turning on a heater or to turn off all heaters before opening a window.</font></b><br>";\
+  var emailBody4="<br>Thank you for tracking your ventilation behavior and for acting environmentally friendly.<br><br>You are amazing!";\
+  var emailImages=\{\};\
+  var emailCharts = "";\
+  for(var i=0;i<charts.length;i++)\{\
+    var builder = charts[i].modify();\
+    builder.setOption('vAxis.format', '#');\
+    var newchart = builder.build();\
+    chartBlobs[i]= newchart.getAs('image/png');\
+    emailCharts += "<p align='left'><img src='cid:chart"+i+"'></p>";\
+    emailImages["chart"+i] = chartBlobs[i];\
+  \}\
+  \
+  var emailBody= emailBody1 + emailCharts + emailBody2 + emailBody3 + emailBody4;\
+\
+  \
+  MailApp.sendEmail(\{\
+    to: emails,\
+    subject: emailSubject,\
+    htmlBody: emailBody,\
+    inlineImages:emailImages\});\
+    \
+  //Set the week value\
+  sheet.getRange('L14').setValue(sheet.getRange('K14').getValue());\
+  sheet.getRange('K14').setValue(sheet.getRange('J14').getValue());\
+  sheet.getRange('J14').setValue(sheet.getRange('I14').getValue());\
+  sheet.getRange('I14').setValue(sheet.getRange('H14').getValue());\
+  sheet.getRange('H14').setValue(sheet.getRange('G14').getValue());\
+  \
+  //Clear values of the last 7 days\
+  sheet.getRange("F5:G11").setValue('');\
+  sheet.getRange('F5').setValue(currentDate).setNumberFormat("dd.MM.yyyy");\
+  sheet.getRange('G5').setValue(0);\
+\
+\}}
